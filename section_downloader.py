@@ -1,20 +1,13 @@
 import os, config, urllib.request, webbrowser
-
 from sys import platform as _platform
 
 # Import the Canvas class
 from canvasapi import Canvas
 
 # Canvas API URl
-# https://SCHOOLNAME.instructure.com/api/v1/
 API_URL = config.API_URL
 
 # Canvas API Key
-# To set it up, you need to create a token authorizing the app to access your Canvas courses:
-# 1) In Canvas, select “Account” from the navigation bar on the left, then select “Settings” from the menu that pops out.
-# 2) Scroll down to the “Approval Integrations:” section and click the “+ New Access Token” button. Fill in the popup (the “Purpose” field is just a note to yourself, so use something like “canvasrsync tool”, and the “Expires” field lets you put a limit on how long the token will be valid. I set it to the middle of the summer and re-generate a token every year).
-# 3) Copy the token from the popup. Once you close the window, you cannot get the token again (you have to generate a new one).
-# 4) Add token to config file as a variable
 API_KEY = config.CANVAS_TOKEN
 
 # Initialize a new Canvas object
@@ -41,6 +34,7 @@ for assignment in assignments:
     print(str(assignmentCounter) + ') ' + assignment.name + " date: " + assignment.due_at[0:10])
     assignmentCounter += 1
 
+# Console input to select the assignment
 print()
 print('What assignment do you want to grade? (Enter #)')
 assignment = int(input())
@@ -52,22 +46,24 @@ while assignment not in assignmentList:
     assignment = int(input())
     print()
 
+# Get selected assignment
 toGrade = course.get_assignment(assignmentList[assignment])
 
+# Create folder to place submissions
 if not os.path.exists(toGrade.name):
     os.mkdir(toGrade.name)
-
 print()
 
 ## Create a list variable in config.py with all your students (by canvas id), seperated by a comma
 students = config.GRADING_SECTION
 
+# Clear terminal
 os.system('cls')
 
-
+# Message for users
 print('Downloading your grading section submissions...')
 
-# Grab submissions
+# Grab submissions and place in folder, will automatically give a zero to missing assignments
 submissions = toGrade.get_submissions()
 for submission in submissions:
     try:
@@ -75,7 +71,14 @@ for submission in submissions:
             file = submission.attachments[0]['url']
             urllib.request.urlretrieve(file, './' + toGrade.name + '/' + submission.attachments[0]['filename'])
     except AttributeError:
-        data = {comment: {text_comment: "No Submission."}, submission: {posted_grade: 0}}
+        data = {
+            comment: {
+                text_comment: "No Submission."
+            },
+            submission: {
+                posted_grade: 0
+            }
+        }
         print("Skipped " + str(submission.user))
         submission.edit(data)
         fake = int(input())
@@ -83,6 +86,7 @@ for submission in submissions:
 ## Open SpeedGrader for specific assignment
 webbrowser.open(config.SCHOOL_CANVAS+str(COURSE_ID)+'/gradebook/speed_grader?assignment_id='+str(toGrade.id))
 
+# TAKE THIS OUT IF IT DOES NOT APPLY
 ## Open Rubrics for assignments (may be specific by course)
 if "Lab" in toGrade.name:
     webbrowser.open(config.LAB_RUBRIC_URL)
@@ -91,6 +95,7 @@ elif "HW" in toGrade.name:
 else:
     webbrowser.open(config.GENERAL_URL)
 
+# Opens the newly created folder with submissions
 if _platform == "darwin":
     # macOS
     os.system('open ' + toGrade.name)
@@ -98,5 +103,6 @@ else:
     # Windows
     os.system('start ' + toGrade.name)
 
+# Clear terminal and display finished message
 os.system('cls')
 print('Done!')
