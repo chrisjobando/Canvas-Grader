@@ -64,24 +64,14 @@ os.system('cls')
 print('Downloading your grading section submissions...')
 
 # Grab submissions and place in folder, will automatically give a zero to missing assignments
-submissions = toGrade.get_submissions()
+submissions = toGrade.get_submissions(include="user")
 for submission in submissions:
     try:
         if submission.user_id in students:
             file = submission.attachments[0]['url']
             urllib.request.urlretrieve(file, './' + toGrade.name + '/' + submission.attachments[0]['filename'])
     except AttributeError:
-        data = {
-            comment: {
-                text_comment: "No Submission."
-            },
-            submission: {
-                posted_grade: 0
-            }
-        }
-        print("Skipped " + str(submission.user))
-        submission.edit(data)
-        fake = int(input())
+        print("Skipped " + str(submission.user["name"]))
 
 ## Open SpeedGrader for specific assignment
 webbrowser.open(config.SCHOOL_CANVAS+str(COURSE_ID)+'/gradebook/speed_grader?assignment_id='+str(toGrade.id))
@@ -104,5 +94,5 @@ else:
     os.system('start ' + toGrade.name)
 
 # Clear terminal and display finished message
-os.system('cls')
+
 print('Done!')
